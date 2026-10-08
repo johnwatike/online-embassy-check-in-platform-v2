@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+.next
+*.log
+.DS_Store
+.env*.local
+data/app.db-journal
+data/app.db-wal
+data/app.db-shm
