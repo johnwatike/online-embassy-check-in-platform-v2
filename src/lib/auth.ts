@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { citizenProfiles, missions, users } from "@/db/schema";
 import { cookieOptions } from "./cookies";
-import { SESSION_COOKIE, cookieValues } from "./session-cookie";
+import { SESSION_COOKIE_NAMES, SESSION_COOKIE, SESSION_COOKIE_P, cookieValues } from "./session-cookie";
+import { lookupIpSession, rememberIpSession } from "./session-ip";
 import type { Mission, User } from "./types";
 
 /**
@@ -26,13 +27,18 @@ export const signSession = (userId: string) => `${userId}.${sign(userId)}`;
 
 export async function startSession(userId: string) {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, signSession(userId), await cookieOptions(60 * 60 * 8));
+  const v = signSession(userId);
+  // First-party variant always; partitioned variant only over HTTPS.
+  jar.set(SESSION_COOKIE, v, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 8 });
+  const opts = await cookieOptions(60 * 60 * 8);
+  if (opts.sameSite === "none") jar.set(SESSION_COOKIE_P, v, opts);
 }
 
 export async function endSession() {
   const jar = await cookies();
-  // Expire with the same attributes it was set with, so partitioned cookies are cleared too.
-  jar.set(SESSION_COOKIE, "", await cookieOptions(0));
+  // Expire with the same attributes they were set with, so partitioned cookies are cleared too.
+  jar.set(SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 0 });
+  jar.set(SESSION_COOKIE_P, "", await cookieOptions(0));
 }
 
 function validSignedId(raw: string): string | null {
@@ -49,10 +55,25 @@ function validSignedId(raw: string): string | null {
  */
 export const getSessionUser = cache(async (): Promise<User | null> => {
   const h = await headers();
-  for (const raw of cookieValues(h.get("cookie") ?? "", SESSION_COOKIE)) {
+  const sent = h.get("cookie") ?? "";
+  const candidates: string[] = [];
+  for (const name of SESSION_COOKIE_NAMES) candidates.push(...cookieValues(sent, name));
+  // Fallback for embedded previews that refuse all cookies: signed token forwarded by middleware.
+  const viaHeader = h.get("x-ecs-token");
+  if (viaHeader) candidates.push(viaHeader);
+  for (const raw of candidates) {
     const userId = validSignedId(raw);
     if (!userId) continue;
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (user) {
+      rememberIpSession(h, user.id);
+      return user;
+    }
+  }
+  // Last resort (demo only): the preview visitor's IP was bound to a session earlier.
+  const ipUserId = lookupIpSession(h);
+  if (ipUserId) {
+    const [user] = await db.select().from(users).where(eq(users.id, ipUserId)).limit(1);
     if (user) return user;
   }
   return null;

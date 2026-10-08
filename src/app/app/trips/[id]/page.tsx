@@ -75,7 +75,24 @@ export default async function TripDetail({ params, searchParams }: { params: Pro
             </ol>
             <div className="mt-5"><DefList items={[
               { label: "Purpose", value: PURPOSES[trip.purpose] ?? trip.purpose },
-              { label: "Accommodation", value: trip.accommodation || "Not provided" },
+              {
+                label: "Where you're staying",
+                value:
+                  trip.lodgingName || trip.accommodation ? (
+                    <>
+                      {[trip.lodgingName, trip.accommodation].filter(Boolean).join(" · ")}
+                      {trip.lodgingLat != null && trip.lodgingLng != null && (
+                        <>
+                          <br />
+                          <span className="text-sm text-navy-700">📍 {trip.lodgingPlace} · {trip.lodgingLat}, {trip.lodgingLng} (picked automatically) · </span>
+                          <a className="text-sm underline" target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${trip.lodgingLat}&mlon=${trip.lodgingLng}#map=13/${trip.lodgingLat}/${trip.lodgingLng}`}>View on map</a>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    "Not provided"
+                  ),
+              },
               { label: "Contact while abroad", value: [trip.contactPhone, trip.contactEmail].filter(Boolean).join(" · ") || "Not provided" },
               { label: "Arrival confirmed", value: trip.arrivalConfirmedAt ? fmtDateTime(trip.arrivalConfirmedAt) : "Not yet" },
               { label: "Dependants", value: deps.length ? deps.map((d) => `${d.fullName} (${d.relationship})`).join(", ") : "None" },

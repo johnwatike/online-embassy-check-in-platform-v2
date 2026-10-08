@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, desc, eq, ilike, ne, or, type SQL } from "drizzle-orm";
+import { and, desc, eq, like, ne, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { assistanceCases, citizenProfiles, users, type CaseStatus, type Priority } from "@/db/schema";
 import { AccessDenied, MissionScopeNote } from "@/components/staff-bits";
@@ -8,7 +8,7 @@ import { Badge, Card, EmptyState, PageHeader, tableCls, btn } from "@/components
 import { requireStaff } from "@/lib/auth";
 import { CASE_CATEGORIES, CASE_STATUS, PRIORITY, can } from "@/lib/constants";
 import { fmtDateTime } from "@/lib/format";
-import { alias } from "drizzle-orm/pg-core";
+import { alias } from "drizzle-orm/sqlite-core";
 
 export const metadata: Metadata = { title: "Assistance cases" };
 
@@ -22,7 +22,7 @@ export default async function CasesPage({ searchParams }: { searchParams: Promis
   if (sp.status && sp.status in CASE_STATUS) conds.push(eq(assistanceCases.status, sp.status as CaseStatus));
   if (sp.priority && sp.priority in PRIORITY) conds.push(eq(assistanceCases.priority, sp.priority as Priority));
   if (sp.mine === "1") conds.push(eq(assistanceCases.assignedToId, user.id));
-  if (sp.q) conds.push(or(ilike(assistanceCases.reference, `%${sp.q}%`), ilike(citizenProfiles.fullName, `%${sp.q}%`)));
+  if (sp.q) conds.push(or(like(assistanceCases.reference, `%${sp.q}%`), like(citizenProfiles.fullName, `%${sp.q}%`)));
   const rows = await db
     .select({ c: assistanceCases, name: citizenProfiles.fullName, assignee: assignee.displayName })
     .from(assistanceCases)

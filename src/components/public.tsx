@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { getLang, tr } from "@/lib/i18n";
@@ -45,8 +46,11 @@ export function PublicFooter() {
     <footer className="mt-16 border-t border-navy-100 bg-white">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm text-navy-700 sm:grid-cols-3">
         <div>
-          <BrandMark />
-          <p className="mt-2">A pilot prepared for Kenya&apos;s Ministry of Foreign Affairs and its missions abroad. It uses no government seals or coat of arms, and is not yet operated by the Ministry.</p>
+          <div className="flex items-center gap-4">
+            <Image src="/mfa-logo.png" alt="Seal of the Ministry of Foreign Affairs, Republic of Kenya" width={1408} height={768} sizes="96px" className="h-14 w-auto" />
+            <BrandMark emblemSize="h-9" />
+          </div>
+          <p className="mt-2">A pilot prepared for Kenya&apos;s Ministry of Foreign Affairs and its missions abroad. The coat of arms and ministry seal artwork shown in this prototype are illustrative placeholders until the Ministry supplies official marks.</p>
         </div>
         <div>
           <p className="font-semibold text-navy-950">Important</p>

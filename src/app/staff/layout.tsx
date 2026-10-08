@@ -8,6 +8,7 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   const items: (NavItem & { perm: Permission })[] = [
     { href: "/staff", label: "Dashboard", icon: "▦", exact: true, perm: "reports.view" },
     { href: "/staff/registrations", label: "Citizen registrations", icon: "🧳", perm: "records.view" },
+    { href: "/staff/map", label: "Check-in map", icon: "🗺", perm: "records.view" },
     { href: "/staff/cases", label: "Assistance cases", icon: "✉", perm: "cases.manage" },
     { href: "/staff/alerts", label: "Alerts", icon: "🔔", perm: "alerts.draft" },
     { href: "/staff/crisis", label: "Crisis wellbeing checks", icon: "⚠", perm: "crisis.view" },

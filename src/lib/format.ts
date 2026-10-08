@@ -43,9 +43,18 @@ export function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+export function addHours(hours: number, from = new Date()) {
+  return new Date(from.getTime() + hours * 3600e3);
+}
+
 export function addDays(days: number, from = new Date()) {
   const d = new Date(from.getTime() + days * 86400000);
   return d.toISOString().slice(0, 10);
+}
+
+/** Like addDays, but returns a Date (for timestamp column comparisons). */
+export function addDaysDate(days: number, from = new Date()) {
+  return new Date(from.getTime() + days * 86400000);
 }
 
 const REF_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

@@ -18,6 +18,12 @@
 .DS_Store
 *.pem
 
+# the SQLite database file (data/app.db) is committed on purpose – it ships the sample data.
+# transient SQLite journal/wal files must never be committed:
+/data/app.db-journal
+/data/app.db-wal
+/data/app.db-shm
+
 # debug
 npm-debug.log*
 yarn-debug.log*

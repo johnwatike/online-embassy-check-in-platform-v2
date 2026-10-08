@@ -4,7 +4,8 @@ import { users } from "@/db/schema";
 import { signSession } from "@/lib/auth";
 import { ensureSeeded } from "@/lib/seed";
 import { audit } from "@/lib/services";
-import { SESSION_COOKIE, buildCookie, isHttps, legacyCookieDeletions } from "@/lib/session-cookie";
+import { isHttps, sessionCookieDeletions, sessionCookieHeaders } from "@/lib/session-cookie";
+import { rememberIpSession } from "@/lib/session-ip";
 import { UUID } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +32,13 @@ export async function POST(req: Request) {
   if (!u) return new Response(null, { status: 303, headers: { Location: "/sign-in?error=unknown", "Cache-Control": "no-store" } });
 
   const https = isHttps(req.headers);
-  const headers = new Headers({ Location: u.role === "citizen" ? "/app" : "/staff", "Cache-Control": "no-store" });
-  for (const c of legacyCookieDeletions(SESSION_COOKIE)) headers.append("Set-Cookie", c);
-  headers.append("Set-Cookie", buildCookie(SESSION_COOKIE, signSession(u.id), { https, maxAge: 60 * 60 * 8 }));
+  const token = signSession(u.id);
+  rememberIpSession(req.headers, u.id);
+  // The signed session travels as a cookie AND (as a fallback for embedded previews that refuse
+  // all cookies) as an `ecs` query parameter that middleware forwards to getSessionUser.
+  const headers = new Headers({ Location: `${u.role === "citizen" ? "/app" : "/staff"}?ecs=${encodeURIComponent(token)}`, "Cache-Control": "no-store" });
+  for (const c of sessionCookieDeletions()) headers.append("Set-Cookie", c);
+  for (const c of sessionCookieHeaders(token, https, 60 * 60 * 8)) headers.append("Set-Cookie", c);
   await audit(u, "session.start", "session", null, `Demo session started (${u.role})`);
   return new Response(null, { status: 303, headers });
 }

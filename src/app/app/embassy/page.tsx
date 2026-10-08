@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { submitFeedback } from "@/app/actions/citizen";
 import { ActionForm, RadioCards, SelectField, SubmitButton, TextAreaField } from "@/components/form";
 import { MissionContact } from "@/components/mission-card";
@@ -29,7 +30,7 @@ export default async function EmbassyPage({ searchParams }: { searchParams: Prom
       <Flash notice={notice} />
       <PageHeader title="Contact my embassy" description="Who is responsible for where you are, how to reach them, and how to book or send feedback." actions={<ButtonLink href="/app/appointments/book" variant="teal">Book an appointment</ButtonLink>} />
       {mine.length === 0 && (
-        <Notice tone="info" className="mb-6" title="No registered trip yet">Register a trip to see the mission responsible for your destination, or <a className="underline" href="/embassies">search the directory</a>.</Notice>
+        <Notice tone="info" className="mb-6" title="No registered trip yet">Register a trip to see the mission responsible for your destination, or <Link className="underline" href="/embassies">search the directory</Link>.</Notice>
       )}
       {unrouted && <Notice tone="warning" className="mb-6" title={`No Kenyan mission covers ${unrouted} in this demo`}>Fallback line: {FALLBACK_CONTACT.name}, {FALLBACK_CONTACT.phone} (demo placeholder).</Notice>}
       <div className="grid gap-5 lg:grid-cols-2">

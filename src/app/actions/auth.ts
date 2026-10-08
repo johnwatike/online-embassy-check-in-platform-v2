@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { citizenProfiles, emergencyContacts, notificationPreferences, users } from "@/db/schema";
-import { startSession } from "@/lib/auth";
+import { signSession, startSession } from "@/lib/auth";
 import { DIAL_CODES, LANGUAGES } from "@/lib/constants";
 import { ensureSeeded } from "@/lib/seed";
 import { audit } from "@/lib/services";
@@ -46,5 +46,5 @@ export async function createDemoAccount(_prev: ActionState, fd: FormData): Promi
   if (d.ecName) await db.insert(emergencyContacts).values({ userId: u.id, name: d.ecName, relationship: d.ecRelationship, phone: d.ecPhone, email: d.ecEmail || null });
   await audit(u, "account.create", "user", u.id, "Demo citizen account created");
   await startSession(u.id);
-  redirect("/app?welcome=1");
+  redirect(`/app?welcome=1&ecs=${encodeURIComponent(signSession(u.id))}`);
 }

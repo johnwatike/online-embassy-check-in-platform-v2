@@ -9,7 +9,7 @@ import { AccessDenied } from "@/components/staff-bits";
 import { Badge, Card, EmptyState, PageHeader, SectionTitle, cx, tableCls } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { APPT_STATUS, can } from "@/lib/constants";
-import { dayKey, fmtDayLong, fmtTime, todayStr, zonedToUtc } from "@/lib/format";
+import { addDaysDate, dayKey, fmtDayLong, fmtTime, todayStr, zonedToUtc } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Appointments" };
 
@@ -24,8 +24,8 @@ export default async function StaffAppointments({ searchParams }: { searchParams
   const [y, m] = month.split("-").map(Number);
   const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
   const next = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
-  const from = view === "calendar" ? zonedToUtc(`${month}-01`, "00:00", tz) : new Date(Date.now() - 86400e3);
-  const to = view === "calendar" ? zonedToUtc(`${next}-01`, "00:00", tz) : new Date(Date.now() + 45 * 86400e3);
+  const from = view === "calendar" ? zonedToUtc(`${month}-01`, "00:00", tz) : addDaysDate(-1);
+  const to = view === "calendar" ? zonedToUtc(`${next}-01`, "00:00", tz) : addDaysDate(45);
 
   const rows = await db
     .select({ a: appointments, name: citizenProfiles.fullName })
