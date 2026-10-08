@@ -13,6 +13,7 @@ import {
   type TripStatus,
 } from "@/db/schema";
 import { addDays, todayStr } from "./format";
+import { geocodePlace } from "./geo";
 import type { User } from "./types";
 
 /** Mission scoping: officers and mission admins only ever see their own mission. Platform admins see aggregates only. */
@@ -91,6 +92,89 @@ export async function staffRegistrations(user: User, f: RegFilters) {
       .offset((page - 1) * PAGE),
   ]);
   return { rows, total, page, pages: Math.max(1, Math.ceil(total / PAGE)), pageSize: PAGE };
+}
+
+/** One plotted point per registered destination on the staff check-in map. */
+export type MapPoint = {
+  id: string;
+  citizen: string;
+  ref: string;
+  status: "planned" | "active";
+  wellbeing: string | null;
+  country: string;
+  region: string | null;
+  place: string;
+  lat: number;
+  lng: number;
+  approx: boolean;
+  lodging: string | null;
+  arrival: string;
+  departure: string | null;
+};
+
+/**
+ * Check-in map data for the staff portal: every current/upcoming destination in this
+ * mission's jurisdiction, positioned at the citizen's lodging coordinates when they shared
+ * them, otherwise at the best-matching place (or capital, marked approximate) for the
+ * destination. Individual records – only for roles with records.view.
+ */
+export async function staffMapPoints(user: User): Promise<MapPoint[]> {
+  if (!user.missionId) return [];
+  const rows = await db
+    .select({
+      tripId: trips.id,
+      ref: trips.reference,
+      status: trips.status,
+      wellbeing: trips.wellbeingStatus,
+      citizen: citizenProfiles.fullName,
+      country: tripDestinations.country,
+      region: tripDestinations.region,
+      arrival: tripDestinations.arrivalDate,
+      departure: tripDestinations.departureDate,
+      lodgingName: trips.lodgingName,
+      lodgingAddress: trips.accommodation,
+      lodgingPlace: trips.lodgingPlace,
+      lodgingLat: trips.lodgingLat,
+      lodgingLng: trips.lodgingLng,
+    })
+    .from(trips)
+    .innerJoin(tripDestinations, eq(tripDestinations.tripId, trips.id))
+    .innerJoin(citizenProfiles, eq(citizenProfiles.userId, trips.userId))
+    .where(and(eq(tripDestinations.missionId, user.missionId), inArray(trips.status, ["active", "planned"])))
+    .orderBy(asc(citizenProfiles.fullName));
+
+  const points: MapPoint[] = [];
+  for (const r of rows) {
+    let lat = r.lodgingLat;
+    let lng = r.lodgingLng;
+    let place = r.lodgingPlace ?? "";
+    let approx = false;
+    if (lat == null || lng == null) {
+      const geo = geocodePlace(`${r.region ?? ""} ${r.country}`, r.country);
+      if (!geo) continue;
+      lat = geo.lat;
+      lng = geo.lng;
+      place = geo.place;
+      approx = geo.kind === "capital" || !r.region;
+    }
+    points.push({
+      id: `${r.tripId}`,
+      citizen: r.citizen,
+      ref: r.ref,
+      status: r.status as "planned" | "active",
+      wellbeing: r.wellbeing,
+      country: r.country,
+      region: r.region,
+      place,
+      lat,
+      lng,
+      approx,
+      lodging: [r.lodgingName, r.lodgingAddress].filter(Boolean).join(" · ") || null,
+      arrival: r.arrival,
+      departure: r.departure,
+    });
+  }
+  return points;
 }
 
 export async function dashboardStats(user: User) {
