@@ -63,6 +63,9 @@ Scripts: `npm run dev | build | start | lint | typecheck`, `npm run db` (dev Pos
 ## Notes for the Ministry
 
 - `next.config.ts` lists preview origins for Server Actions; set `ALLOWED_ORIGINS` for production.
+- Demo sessions use an httpOnly cookie; in embedded previews that refuse all cookies, a signed
+  `ecs` URL token (forwarded by `src/proxy.ts`) keeps the demo usable. Replace with real
+  authentication (OIDC/SAML SSO with MFA for staff) before launch.
 - Delivery of email/SMS/push is simulated. Real identity, SSO/MFA and payment integrations are
   out of scope for the pilot.
 - Kiswahili strings in `src/lib/i18n.ts` must be reviewed by a qualified translator.

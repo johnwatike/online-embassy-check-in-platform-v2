@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { SessionBridge } from "@/components/session-bridge";
 import { getLang } from "@/lib/i18n";
 import "@fontsource-variable/inter"; // eCitizen-style typography, self-hosted
 import "./globals.css";
@@ -20,7 +21,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const lang = await getLang();
   return (
     <html lang={lang === "sw" ? "sw" : "en"}>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <SessionBridge />
+        {children}
+      </body>
     </html>
   );
 }
