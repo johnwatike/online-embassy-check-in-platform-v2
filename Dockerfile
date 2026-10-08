@@ -1,7 +1,6 @@
 # Multi-stage Dockerfile for Next.js App Router with better-sqlite3
 FROM node:22-slim AS base
 WORKDIR /app
-ENV NODE_ENV=production
 
 # Install build dependencies for native addon (better-sqlite3)
 FROM base AS deps
@@ -12,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
+# Install all dependencies including devDependencies needed to build Next.js / Tailwind
 RUN npm ci
 
 # Builder stage
@@ -19,7 +19,10 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 RUN npm run build
+# Prune devDependencies to keep runtime node_modules lightweight
+RUN npm prune --omit=dev
 
 # Runner stage: lean production runtime
 FROM base AS runner
@@ -31,7 +34,7 @@ ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SQLITE_PATH=/app/data/app.db
 
-# better-sqlite3 requires sqlite3 runtime lib
+# Curl for container healthchecks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -39,7 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 nextjs
 
-# Copy built application and runtime dependencies
+# Copy built application and pruned production dependencies
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
