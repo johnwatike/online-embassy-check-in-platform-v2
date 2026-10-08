@@ -16,7 +16,7 @@ export async function PublicHeader() {
     <>
       <a href="#main" className="skip-link">{tr(lang, "nav.skip")}</a>
       <div className="bg-gold-400 px-4 py-1.5 text-center text-xs font-semibold text-navy-950 sm:text-sm">{tr(lang, "banner.short")}</div>
-      <header className="on-dark bg-navy-950 text-white">
+      <header className="on-dark sticky top-0 z-40 bg-navy-950 text-white shadow-md">
         <div className="mx-auto flex max-w-[96rem] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Embassy Connect home"><BrandMark light /></Link>
           <nav aria-label="Public" className="order-3 flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
