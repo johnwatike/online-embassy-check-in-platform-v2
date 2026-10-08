@@ -33,7 +33,6 @@ export function ActionForm({
       <form
         ref={ref}
         className={cx("space-y-4", className)}
-        action={formAction}
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);

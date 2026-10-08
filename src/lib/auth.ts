@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { citizenProfiles, missions, users } from "@/db/schema";
 import { cookieOptions } from "./cookies";
 import { SESSION_COOKIE_NAMES, SESSION_COOKIE, SESSION_COOKIE_P, cookieValues } from "./session-cookie";
+import { lookupIpSession, rememberIpSession } from "./session-ip";
 import type { Mission, User } from "./types";
 
 /**
@@ -64,6 +65,15 @@ export const getSessionUser = cache(async (): Promise<User | null> => {
     const userId = validSignedId(raw);
     if (!userId) continue;
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (user) {
+      rememberIpSession(h, user.id);
+      return user;
+    }
+  }
+  // Last resort (demo only): the preview visitor's IP was bound to a session earlier.
+  const ipUserId = lookupIpSession(h);
+  if (ipUserId) {
+    const [user] = await db.select().from(users).where(eq(users.id, ipUserId)).limit(1);
     if (user) return user;
   }
   return null;

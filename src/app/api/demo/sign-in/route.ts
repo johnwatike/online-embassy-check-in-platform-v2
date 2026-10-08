@@ -5,6 +5,7 @@ import { signSession } from "@/lib/auth";
 import { ensureSeeded } from "@/lib/seed";
 import { audit } from "@/lib/services";
 import { isHttps, sessionCookieDeletions, sessionCookieHeaders } from "@/lib/session-cookie";
+import { rememberIpSession } from "@/lib/session-ip";
 import { UUID } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
 
   const https = isHttps(req.headers);
   const token = signSession(u.id);
+  rememberIpSession(req.headers, u.id);
   // The signed session travels as a cookie AND (as a fallback for embedded previews that refuse
   // all cookies) as an `ecs` query parameter that middleware forwards to getSessionUser.
   const headers = new Headers({ Location: `${u.role === "citizen" ? "/app" : "/staff"}?ecs=${encodeURIComponent(token)}`, "Cache-Control": "no-store" });
