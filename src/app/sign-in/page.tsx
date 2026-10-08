@@ -69,7 +69,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <PublicHeader />
-      <main id="main" className="mx-auto max-w-6xl px-4 py-10">
+      <main id="main" className="mx-auto max-w-[96rem] px-4 py-10 sm:px-6 lg:px-8">
         {sp.reset && <div role="status" className="mb-6"><Notice tone="success">Demo data has been reset to its original sample state.</Notice></div>}
         {sp.error && <div role="alert" className="mb-6"><Notice tone="warning" title="That demo user is no longer available">The demo data was probably reset while this page was open. Please choose a persona from the list below.</Notice></div>}
 

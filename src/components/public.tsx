@@ -17,7 +17,7 @@ export async function PublicHeader() {
       <a href="#main" className="skip-link">{tr(lang, "nav.skip")}</a>
       <div className="bg-gold-400 px-4 py-1.5 text-center text-xs font-semibold text-navy-950 sm:text-sm">{tr(lang, "banner.short")}</div>
       <header className="on-dark bg-navy-950 text-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <div className="mx-auto flex max-w-[96rem] flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6 lg:px-8">
           <Link href="/" aria-label="Embassy Connect home"><BrandMark light /></Link>
           <nav aria-label="Public" className="order-3 flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
             {links.map((l) => (
@@ -44,7 +44,7 @@ export async function PublicHeader() {
 export function PublicFooter() {
   return (
     <footer className="mt-16 border-t border-navy-100 bg-white">
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 text-sm text-navy-700 sm:grid-cols-3">
+      <div className="mx-auto grid max-w-[96rem] gap-6 px-4 py-8 text-sm text-navy-700 sm:grid-cols-3 sm:px-6 lg:px-8">
         <div>
           <div className="flex items-center gap-4">
             <Image src="/mfa-logo.png" alt="Seal of the Ministry of Foreign Affairs, Republic of Kenya" width={1408} height={768} sizes="96px" className="h-14 w-auto" />

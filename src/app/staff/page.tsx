@@ -21,7 +21,7 @@ export default async function StaffDashboard() {
   const avg = s.feedbackRows.length ? (s.feedbackRows.reduce((a, b) => a + b.rating, 0) / s.feedbackRows.length).toFixed(1) : "–";
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <PageHeader title="Staff dashboard" eyebrow={mission?.name ?? "All missions"} description={`Signed in as ${ROLE_LABEL[user.role]} (demo). Figures are aggregate counts as of ${fmtDate(todayStr())}.`} />
       <MissionScopeNote name={mission?.name ?? null} />
       {aggregateOnly && <Notice tone="info" className="mb-5" title="Aggregate view">Platform administrators see totals across missions. Counts below 5 are shown as “&lt;5” in breakdowns to avoid exposing individuals.</Notice>}

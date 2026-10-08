@@ -25,14 +25,14 @@ export default async function Home() {
       <PublicHeader />
       <main id="main">
         <section className="on-dark bg-gradient-to-b from-ke-black via-mfa-navy to-navy-800 text-white">
-          <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+          <div className="mx-auto max-w-[96rem] px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
             <div className="mb-6 flex items-center gap-5">
               <Image src="/mfa-logo.png" alt="Seal of the Ministry of Foreign Affairs, Republic of Kenya" width={1408} height={768} sizes="96px" className="h-16 w-auto sm:h-20" />
               <Image src="/kenya-coat-of-arms.png" alt="Coat of arms of the Republic of Kenya" width={1408} height={768} sizes="96px" className="h-16 w-auto sm:h-20" />
             </div>
             <p className="mb-3 inline-block rounded-full border border-gold-400/60 px-3 py-1 text-sm font-semibold text-gold-300">{t("home.eyebrow")}</p>
-            <h1 className="max-w-3xl font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">{t("home.h1")}</h1>
-            <p className="mt-5 max-w-2xl text-lg text-navy-100">{t("home.lead")}</p>
+            <h1 className="max-w-4xl font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">{t("home.h1")}</h1>
+            <p className="mt-5 max-w-3xl text-lg text-navy-100">{t("home.lead")}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/sign-in" variant="gold" size="lg">{t("home.getStarted")}</ButtonLink>
               <ButtonLink href="/embassies" variant="outline" size="lg">{t("home.findEmbassy")}</ButtonLink>
@@ -41,7 +41,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <div className="mx-auto max-w-6xl px-4">
+        <div className="mx-auto max-w-[96rem] px-4 sm:px-6 lg:px-8">
           <DemoNotice className="relative -mt-6 shadow-md" />
 
           <section aria-labelledby="how" className="mt-12">

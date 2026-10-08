@@ -73,7 +73,7 @@ export function ShellFrame({
       <a href="#main" className="skip-link">{labels.skip}</a>
       <div className="no-print bg-gold-400 px-4 py-1.5 text-center text-xs font-semibold text-navy-950 sm:text-sm">{labels.banner}</div>
       <header className="no-print on-dark sticky top-0 z-30 bg-navy-950 text-white">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-[96rem] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <Link href={variant === "citizen" ? "/app" : "/staff"} aria-label="Embassy Connect home">
             <BrandMark light />
           </Link>
@@ -111,7 +111,7 @@ export function ShellFrame({
           </nav>
         )}
       </header>
-      <div className="mx-auto flex max-w-7xl">
+      <div className="mx-auto flex max-w-[96rem]">
         <aside className="no-print hidden w-64 shrink-0 lg:block">
           <nav aria-label="Main" className="sticky top-[5.5rem] p-4">
             {list}

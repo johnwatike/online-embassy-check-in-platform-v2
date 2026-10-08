@@ -36,7 +36,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const upcomingTrips = trips.filter((t) => t.status === "planned" && t.id !== trip?.id);
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <Flash notice={sp.notice} />
       {sp.welcome && <div className="mb-5"><Notice tone="success" title="Welcome to Embassy Connect (demo)">Your demo account is ready. Start by checking in for a trip — or explore the embassy directory.</Notice></div>}
       {crisis.map(({ e, mission }) => (

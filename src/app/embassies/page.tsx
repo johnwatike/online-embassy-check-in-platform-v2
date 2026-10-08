@@ -24,7 +24,7 @@ export default async function Embassies({ searchParams }: { searchParams: Promis
   return (
     <>
       <PublicHeader />
-      <main id="main" className="mx-auto max-w-6xl px-4 py-10">
+      <main id="main" className="mx-auto max-w-[96rem] px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="font-serif text-4xl font-semibold text-navy-950">Kenyan embassies, high commissions and consulates</h1>
         <p className="mt-2 max-w-2xl text-lg text-navy-700">Search by the country you&apos;re travelling to, a city, or a mission name. We&apos;ll show which Kenyan mission is responsible — even if it is based in another country.</p>
         <Notice tone="gold" className="mt-4" title="Pilot directory – details to be confirmed">{DIRECTORY_NOTE}</Notice>
