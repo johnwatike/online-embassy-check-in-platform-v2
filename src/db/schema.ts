@@ -1,33 +1,23 @@
-import {
-  boolean,
-  date,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  primaryKey,
-  real,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { randomUUID } from "crypto";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ---------------------------------------------------------------------------
 // Embassy Connect data model (pilot for Kenya's Ministry of Foreign Affairs; all seeded data is sample data).
 // Every table has a unique id and created/updated timestamps where it makes sense.
+// Storage: SQLite (data/app.db, committed to git). Timestamps are stored as ISO-8601 text.
 // Ownership: citizen-owned rows carry `user_id`. Jurisdiction: rows handled by staff
 // carry `mission_id`, and staff only see rows for their own mission.
 // ---------------------------------------------------------------------------
 
-const id = () => uuid("id").primaryKey().defaultRandom();
-const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow().notNull();
+const id = () => text("id").primaryKey().$defaultFn(() => randomUUID());
+const createdAt = () => integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull();
 const updatedAt = () =>
-  timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date());
-const tstz = (name: string) => timestamp(name, { withTimezone: true });
+  integer("updated_at", { mode: "timestamp" })
+    .$defaultFn(() => new Date())
+    .$onUpdate(() => new Date())
+    .notNull();
+const tstz = (name: string) => integer(name, { mode: "timestamp" });
+const plainDate = (name: string) => text(name);
 
 export type Role = "citizen" | "consular_officer" | "mission_admin" | "platform_admin";
 export type ServiceDef = {
@@ -38,7 +28,7 @@ export type ServiceDef = {
   durationMin: number;
 };
 
-export const missions = pgTable("missions", {
+export const missions = sqliteTable("missions", {
   id: id(),
   name: text("name").notNull(),
   kind: text("kind").$type<"embassy" | "high_commission" | "consulate">().notNull().default("embassy"),
@@ -51,17 +41,19 @@ export const missions = pgTable("missions", {
   email: text("email").notNull(),
   website: text("website").notNull(),
   openingHours: text("opening_hours").notNull(),
-  services: jsonb("services").$type<ServiceDef[]>().notNull().default([]),
-  lastVerifiedAt: tstz("last_verified_at").notNull().defaultNow(),
+  services: text("services", { mode: "json" }).$type<ServiceDef[]>().notNull().default([]),
+  lastVerifiedAt: tstz("last_verified_at").$defaultFn(() => new Date()).notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
 
-export const missionJurisdictions = pgTable(
+export const missionJurisdictions = sqliteTable(
   "mission_jurisdictions",
   {
     id: id(),
-    missionId: uuid("mission_id").notNull().references(() => missions.id, { onDelete: "cascade" }),
+    missionId: text("mission_id")
+      .notNull()
+      .references(() => missions.id, { onDelete: "cascade" }),
     country: text("country").notNull(),
     region: text("region"),
     createdAt: createdAt(),
@@ -70,15 +62,15 @@ export const missionJurisdictions = pgTable(
   (t) => [index("jurisdiction_country_idx").on(t.country), index("jurisdiction_mission_idx").on(t.missionId)],
 );
 
-export const users = pgTable(
+export const users = sqliteTable(
   "users",
   {
     id: id(),
     email: text("email").notNull(),
     displayName: text("display_name").notNull(),
     role: text("role").$type<Role>().notNull().default("citizen"),
-    missionId: uuid("mission_id").references(() => missions.id),
-    isDemo: boolean("is_demo").notNull().default(true),
+    missionId: text("mission_id").references(() => missions.id),
+    isDemo: integer("is_demo", { mode: "boolean" }).notNull().default(true),
     deletionRequestedAt: tstz("deletion_requested_at"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -86,11 +78,13 @@ export const users = pgTable(
   (t) => [uniqueIndex("users_email_idx").on(t.email)],
 );
 
-export const citizenProfiles = pgTable(
+export const citizenProfiles = sqliteTable(
   "citizen_profiles",
   {
     id: id(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     fullName: text("full_name").notNull(),
     citizenship: text("citizenship").notNull(),
     phoneDial: text("phone_dial").notNull().default("+1"),
@@ -102,9 +96,11 @@ export const citizenProfiles = pgTable(
   (t) => [uniqueIndex("profiles_user_idx").on(t.userId)],
 );
 
-export const emergencyContacts = pgTable("emergency_contacts", {
+export const emergencyContacts = sqliteTable("emergency_contacts", {
   id: id(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   relationship: text("relationship").notNull(),
   phone: text("phone").notNull(),
@@ -113,16 +109,18 @@ export const emergencyContacts = pgTable("emergency_contacts", {
   updatedAt: updatedAt(),
 });
 
-export const notificationPreferences = pgTable(
+export const notificationPreferences = sqliteTable(
   "notification_preferences",
   {
     id: id(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    email: boolean("email").notNull().default(true),
-    sms: boolean("sms").notNull().default(false),
-    push: boolean("push").notNull().default(false),
-    urgentOverride: boolean("urgent_override").notNull().default(true),
-    reminders: boolean("reminders").notNull().default(true),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    email: integer("email", { mode: "boolean" }).notNull().default(true),
+    sms: integer("sms", { mode: "boolean" }).notNull().default(false),
+    push: integer("push", { mode: "boolean" }).notNull().default(false),
+    urgentOverride: integer("urgent_override", { mode: "boolean" }).notNull().default(true),
+    reminders: integer("reminders", { mode: "boolean" }).notNull().default(true),
     reminderFrequency: text("reminder_frequency").notNull().default("monthly"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -133,16 +131,18 @@ export const notificationPreferences = pgTable(
 export type TripStatus = "planned" | "active" | "closed" | "cancelled";
 export type WellbeingStatus = "safe" | "plans_changed" | "need_assistance" | "left_country";
 
-export const trips = pgTable(
+export const trips = sqliteTable(
   "trips",
   {
     id: id(),
     reference: text("reference").notNull(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     status: text("status").$type<TripStatus>().notNull().default("planned"),
     purpose: text("purpose").notNull(),
-    startsOn: date("starts_on").notNull(),
-    endsOn: date("ends_on"),
+    startsOn: plainDate("starts_on").notNull(),
+    endsOn: plainDate("ends_on"),
     accommodation: text("accommodation"),
     lodgingName: text("lodging_name"),
     lodgingPlace: text("lodging_place"),
@@ -160,29 +160,35 @@ export const trips = pgTable(
   (t) => [uniqueIndex("trips_reference_idx").on(t.reference), index("trips_user_idx").on(t.userId)],
 );
 
-export const tripDestinations = pgTable(
+export const tripDestinations = sqliteTable(
   "trip_destinations",
   {
     id: id(),
-    tripId: uuid("trip_id").notNull().references(() => trips.id, { onDelete: "cascade" }),
+    tripId: text("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
     position: integer("position").notNull().default(0),
     country: text("country").notNull(),
     region: text("region"),
-    missionId: uuid("mission_id").references(() => missions.id),
-    arrivalDate: date("arrival_date").notNull(),
-    departureDate: date("departure_date"),
+    missionId: text("mission_id").references(() => missions.id),
+    arrivalDate: plainDate("arrival_date").notNull(),
+    departureDate: plainDate("departure_date"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [index("dest_trip_idx").on(t.tripId), index("dest_mission_idx").on(t.missionId)],
 );
 
-export const tripEvents = pgTable(
+export const tripEvents = sqliteTable(
   "trip_events",
   {
     id: id(),
-    tripId: uuid("trip_id").notNull().references(() => trips.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    tripId: text("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
     summary: text("summary").notNull(),
     createdAt: createdAt(),
@@ -190,10 +196,14 @@ export const tripEvents = pgTable(
   (t) => [index("trip_events_trip_idx").on(t.tripId)],
 );
 
-export const dependants = pgTable("dependants", {
+export const dependants = sqliteTable("dependants", {
   id: id(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  tripId: uuid("trip_id").notNull().references(() => trips.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tripId: text("trip_id")
+    .notNull()
+    .references(() => trips.id, { onDelete: "cascade" }),
   fullName: text("full_name").notNull(),
   relationship: text("relationship").notNull(),
   birthYear: integer("birth_year"),
@@ -202,12 +212,14 @@ export const dependants = pgTable("dependants", {
   updatedAt: updatedAt(),
 });
 
-export const wellbeingUpdates = pgTable(
+export const wellbeingUpdates = sqliteTable(
   "wellbeing_updates",
   {
     id: id(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    tripId: uuid("trip_id").references(() => trips.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tripId: text("trip_id").references(() => trips.id, { onDelete: "cascade" }),
     status: text("status").$type<WellbeingStatus>().notNull(),
     note: text("note"),
     source: text("source").$type<"citizen" | "crisis_response">().notNull().default("citizen"),
@@ -219,12 +231,14 @@ export const wellbeingUpdates = pgTable(
 export type AlertCategory = "safety" | "travel_guidance" | "service_update" | "crisis";
 export type Severity = "info" | "advisory" | "warning" | "critical";
 
-export const alerts = pgTable(
+export const alerts = sqliteTable(
   "alerts",
   {
     id: id(),
-    missionId: uuid("mission_id").notNull().references(() => missions.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id").references(() => users.id),
+    missionId: text("mission_id")
+      .notNull()
+      .references(() => missions.id, { onDelete: "cascade" }),
+    authorId: text("author_id").references(() => users.id),
     title: text("title").notNull(),
     body: text("body").notNull(),
     category: text("category").$type<AlertCategory>().notNull(),
@@ -234,7 +248,7 @@ export const alerts = pgTable(
     audience: text("audience").$type<"all" | "active" | "planned">().notNull().default("all"),
     status: text("status").$type<"draft" | "published" | "expired">().notNull().default("draft"),
     recipientCount: integer("recipient_count").notNull().default(0),
-    crisisEventId: uuid("crisis_event_id"),
+    crisisEventId: text("crisis_event_id"),
     publishedAt: tstz("published_at"),
     expiresAt: tstz("expires_at"),
     createdAt: createdAt(),
@@ -243,21 +257,27 @@ export const alerts = pgTable(
   (t) => [index("alerts_mission_idx").on(t.missionId), index("alerts_country_idx").on(t.country)],
 );
 
-export const alertReads = pgTable(
+export const alertReads = sqliteTable(
   "alert_reads",
   {
-    alertId: uuid("alert_id").notNull().references(() => alerts.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    readAt: tstz("read_at").notNull().defaultNow(),
+    alertId: text("alert_id")
+      .notNull()
+      .references(() => alerts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    readAt: tstz("read_at").$defaultFn(() => new Date()).notNull(),
   },
   (t) => [primaryKey({ columns: [t.alertId, t.userId] })],
 );
 
-export const notifications = pgTable(
+export const notifications = sqliteTable(
   "notifications",
   {
     id: id(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     kind: text("kind").$type<"case" | "appointment" | "crisis" | "trip" | "system">().notNull(),
     title: text("title").notNull(),
     body: text("body").notNull(),
@@ -273,14 +293,18 @@ export type CaseCategory = "lost_passport" | "medical" | "detention" | "crime" |
 export type CaseStatus = "submitted" | "under_review" | "awaiting_citizen" | "in_progress" | "resolved";
 export type Priority = "low" | "normal" | "high" | "urgent";
 
-export const assistanceCases = pgTable(
+export const assistanceCases = sqliteTable(
   "assistance_cases",
   {
     id: id(),
     reference: text("reference").notNull(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    tripId: uuid("trip_id").references(() => trips.id, { onDelete: "set null" }),
-    missionId: uuid("mission_id").notNull().references(() => missions.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tripId: text("trip_id").references(() => trips.id, { onDelete: "set null" }),
+    missionId: text("mission_id")
+      .notNull()
+      .references(() => missions.id),
     category: text("category").$type<CaseCategory>().notNull(),
     description: text("description").notNull(),
     location: text("location").notNull(),
@@ -289,7 +313,7 @@ export const assistanceCases = pgTable(
     citizenUrgency: text("citizen_urgency").$type<"urgent" | "soon" | "routine">().notNull().default("routine"),
     priority: text("priority").$type<Priority>().notNull().default("normal"),
     status: text("status").$type<CaseStatus>().notNull().default("submitted"),
-    assignedToId: uuid("assigned_to_id").references(() => users.id),
+    assignedToId: text("assigned_to_id").references(() => users.id),
     resolutionNote: text("resolution_note"),
     resolvedAt: tstz("resolved_at"),
     createdAt: createdAt(),
@@ -302,9 +326,11 @@ export const assistanceCases = pgTable(
   ],
 );
 
-export const caseAttachments = pgTable("case_attachments", {
+export const caseAttachments = sqliteTable("case_attachments", {
   id: id(),
-  caseId: uuid("case_id").notNull().references(() => assistanceCases.id, { onDelete: "cascade" }),
+  caseId: text("case_id")
+    .notNull()
+    .references(() => assistanceCases.id, { onDelete: "cascade" }),
   filename: text("filename").notNull(),
   mimeType: text("mime_type").notNull(),
   sizeBytes: integer("size_bytes").notNull(),
@@ -312,12 +338,14 @@ export const caseAttachments = pgTable("case_attachments", {
   createdAt: createdAt(),
 });
 
-export const caseMessages = pgTable(
+export const caseMessages = sqliteTable(
   "case_messages",
   {
     id: id(),
-    caseId: uuid("case_id").notNull().references(() => assistanceCases.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id").references(() => users.id),
+    caseId: text("case_id")
+      .notNull()
+      .references(() => assistanceCases.id, { onDelete: "cascade" }),
+    authorId: text("author_id").references(() => users.id),
     authorKind: text("author_kind").$type<"citizen" | "staff">().notNull(),
     kind: text("kind").$type<"message" | "info_request">().notNull().default("message"),
     body: text("body").notNull(),
@@ -326,28 +354,32 @@ export const caseMessages = pgTable(
   (t) => [index("case_messages_case_idx").on(t.caseId)],
 );
 
-export const caseNotes = pgTable(
+export const caseNotes = sqliteTable(
   "case_notes",
   {
     id: id(),
-    caseId: uuid("case_id").notNull().references(() => assistanceCases.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id").references(() => users.id),
+    caseId: text("case_id")
+      .notNull()
+      .references(() => assistanceCases.id, { onDelete: "cascade" }),
+    authorId: text("author_id").references(() => users.id),
     body: text("body").notNull(),
     createdAt: createdAt(),
   },
   (t) => [index("case_notes_case_idx").on(t.caseId)],
 );
 
-export const caseEvents = pgTable(
+export const caseEvents = sqliteTable(
   "case_events",
   {
     id: id(),
-    caseId: uuid("case_id").notNull().references(() => assistanceCases.id, { onDelete: "cascade" }),
-    actorId: uuid("actor_id").references(() => users.id),
+    caseId: text("case_id")
+      .notNull()
+      .references(() => assistanceCases.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => users.id),
     actorKind: text("actor_kind").$type<"citizen" | "staff" | "system">().notNull(),
     type: text("type").notNull(),
     summary: text("summary").notNull(),
-    citizenVisible: boolean("citizen_visible").notNull().default(true),
+    citizenVisible: integer("citizen_visible", { mode: "boolean" }).notNull().default(true),
     createdAt: createdAt(),
   },
   (t) => [index("case_events_case_idx").on(t.caseId)],
@@ -355,13 +387,15 @@ export const caseEvents = pgTable(
 
 export type AppointmentStatus = "available" | "booked" | "cancelled" | "attended" | "no_show" | "rescheduled";
 
-export const appointments = pgTable(
+export const appointments = sqliteTable(
   "appointments",
   {
     id: id(),
     reference: text("reference"),
-    missionId: uuid("mission_id").notNull().references(() => missions.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    missionId: text("mission_id")
+      .notNull()
+      .references(() => missions.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
     serviceId: text("service_id").notNull(),
     serviceName: text("service_name").notNull(),
     startsAt: tstz("starts_at").notNull(),
@@ -376,19 +410,21 @@ export const appointments = pgTable(
   (t) => [index("appt_mission_idx").on(t.missionId, t.startsAt), index("appt_user_idx").on(t.userId)],
 );
 
-export const crisisEvents = pgTable("crisis_events", {
+export const crisisEvents = sqliteTable("crisis_events", {
   id: id(),
-  missionId: uuid("mission_id").notNull().references(() => missions.id, { onDelete: "cascade" }),
-  createdById: uuid("created_by_id").references(() => users.id),
+  missionId: text("mission_id")
+    .notNull()
+    .references(() => missions.id, { onDelete: "cascade" }),
+  createdById: text("created_by_id").references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
   message: text("message").notNull(),
   country: text("country").notNull(),
   region: text("region"),
-  requestLocation: boolean("request_location").notNull().default(false),
+  requestLocation: integer("request_location", { mode: "boolean" }).notNull().default(false),
   status: text("status").$type<"active" | "closed">().notNull().default("active"),
   targetedCount: integer("targeted_count").notNull().default(0),
-  sentAt: tstz("sent_at").notNull().defaultNow(),
+  sentAt: tstz("sent_at").$defaultFn(() => new Date()).notNull(),
   closedAt: tstz("closed_at"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -396,13 +432,17 @@ export const crisisEvents = pgTable("crisis_events", {
 
 export type CrisisAnswer = "safe" | "need_help" | "not_affected";
 
-export const crisisResponses = pgTable(
+export const crisisResponses = sqliteTable(
   "crisis_responses",
   {
     id: id(),
-    crisisEventId: uuid("crisis_event_id").notNull().references(() => crisisEvents.id, { onDelete: "cascade" }),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    tripId: uuid("trip_id").references(() => trips.id, { onDelete: "set null" }),
+    crisisEventId: text("crisis_event_id")
+      .notNull()
+      .references(() => crisisEvents.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tripId: text("trip_id").references(() => trips.id, { onDelete: "set null" }),
     response: text("response").$type<CrisisAnswer>(),
     note: text("note"),
     locationText: text("location_text"),
@@ -415,14 +455,14 @@ export const crisisResponses = pgTable(
   (t) => [uniqueIndex("crisis_resp_unique_idx").on(t.crisisEventId, t.userId)],
 );
 
-export const auditEvents = pgTable(
+export const auditEvents = sqliteTable(
   "audit_events",
   {
     id: id(),
-    actorId: uuid("actor_id"),
+    actorId: text("actor_id"),
     actorName: text("actor_name").notNull(),
     actorRole: text("actor_role").notNull(),
-    missionId: uuid("mission_id"),
+    missionId: text("mission_id"),
     action: text("action").notNull(),
     entityType: text("entity_type").notNull(),
     entityId: text("entity_id"),
@@ -433,10 +473,10 @@ export const auditEvents = pgTable(
   (t) => [index("audit_created_idx").on(t.createdAt), index("audit_mission_idx").on(t.missionId)],
 );
 
-export const feedback = pgTable("feedback", {
+export const feedback = sqliteTable("feedback", {
   id: id(),
-  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
-  missionId: uuid("mission_id").references(() => missions.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  missionId: text("mission_id").references(() => missions.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(),
   topic: text("topic").notNull(),
   message: text("message").notNull(),

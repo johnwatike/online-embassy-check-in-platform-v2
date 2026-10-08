@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray } from "drizzle-orm";
+import { and, eq, like, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   auditEvents,
@@ -75,7 +75,7 @@ export async function findRecipients(
   const statuses: TripStatus[] = opts.audience === "all" ? ["planned", "active"] : [opts.audience];
   const conds = [eq(tripDestinations.country, opts.country), inArray(trips.status, statuses)];
   if (opts.missionId) conds.push(eq(tripDestinations.missionId, opts.missionId));
-  if (opts.region && opts.region.trim()) conds.push(ilike(tripDestinations.region, `%${opts.region.trim()}%`));
+  if (opts.region && opts.region.trim()) conds.push(like(tripDestinations.region, `%${opts.region.trim()}%`));
   const rows = await x
     .select({ userId: trips.userId, tripId: trips.id })
     .from(tripDestinations)

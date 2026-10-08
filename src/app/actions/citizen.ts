@@ -4,7 +4,7 @@ import { and, eq, gt, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { db } from "@/db";
+import { db, withTransaction } from "@/db";
 import {
   alertReads,
   appointments,
@@ -475,7 +475,7 @@ export async function bookAppointment(rescheduleId: string, _prev: ActionState, 
   const { user } = await requireCitizen();
   const slotId = String(fd.get("slotId") ?? "");
   if (!UUID.test(slotId)) return { error: "Choose a date and time first.", fieldErrors: { slotId: "Choose a time slot" } };
-  const result = await db.transaction(async (tx) => {
+  const result = await withTransaction(async (tx) => {
     const [slot] = await tx
       .update(appointments)
       .set({ status: "booked", userId: user.id, reference: makeRef("APT"), bookedAt: new Date() })

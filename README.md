@@ -13,8 +13,9 @@ crisis checks, audit and aggregate reporting.
 ## Stack
 
 - **Next.js 16** (App Router, Server Actions, React 19) + **Tailwind CSS 4**
-- **PostgreSQL** via `pg` + **Drizzle ORM** (schema in `src/db/schema.ts`)
-- **Self‑hosted dev Postgres** via the `embedded-postgres` npm package (no system install needed)
+- **SQLite** (`better-sqlite3`) + **Drizzle ORM** (schema in `src/db/schema.ts`); the database
+  file `data/app.db` is **committed to git**, so the sample data ships with the source
+- Interactive check‑in map via **Leaflet** with free tile layers (CARTO Voyager / OpenStreetMap / Esri satellite)
 
 ## Branding
 
@@ -33,23 +34,20 @@ and red families, so the whole app (buttons, badges, charts, focus rings) stays 
 
 ```bash
 npm install
-
-# 1. start the embedded local PostgreSQL (keeps running; data in ./.pgdata, gitignored)
-node scripts/db-server.mjs          # or: npm run db
-
-# 2. create the tables (DATABASE_URL comes from .env.local)
-npx drizzle-kit push
-
-# 3. run the app
 npm run dev                          # http://localhost:3000
 ```
 
-The database seeds itself with sample missions (following the Ministry's published directory),
-citizens, staff, trips, cases, alerts, appointments and a crisis event on first request.
-Open `/sign-in` and pick a persona — e.g. **Wanjiku Mwangi** (citizen) or **Mercy Atieno**
-(consular officer, Dubai). `/api/demo/reset` restores the original sample state.
+No database server is needed: the app reads and writes the committed `data/app.db`
+SQLite file directly. `drizzle-kit push` is only required after schema changes
+(config in `drizzle.config.json`).
 
-Scripts: `npm run dev | build | start | lint | typecheck`, `npm run db` (dev Postgres).
+The database ships with sample missions (following the Ministry's published directory),
+citizens, staff, trips, cases, alerts, appointments and a crisis event; if the file is ever
+emptied it re-seeds itself on first request. Open `/sign-in` and pick a persona — e.g.
+**Wanjiku Mwangi** (citizen) or **Mercy Atieno** (consular officer, Dubai).
+`/api/demo/reset` restores the original sample state.
+
+Scripts: `npm run dev | build | start | lint | typecheck`.
 
 ## Portals & routes
 
@@ -58,8 +56,9 @@ Scripts: `npm run dev | build | start | lint | typecheck`, `npm run db` (dev Pos
   coordinates from the bundled offline `all-the-cities` dataset), status check‑in, alerts,
   help/cases with messaging and attachments, appointments, printable emergency contact card
   (`/api/card`), profile
-- **Staff** — `/staff` dashboard, registrations, cases, alerts (draft/publish), crisis wellbeing
-  checks, appointments, mission settings, roles & audit (permission‑gated)
+- **Staff** — `/staff` dashboard, registrations, **check‑in map** (`/staff/map`, Leaflet,
+  mission‑scoped), cases, alerts (draft/publish), crisis wellbeing checks, appointments,
+  mission settings, roles & audit (permission‑gated)
 - **i18n** — English / Kiswahili switch (EN | SW) on the main screens
 
 ## Notes for the Ministry

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ilike, inArray, isNull, lte, ne, or, sql, count, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, inArray, isNull, lte, ne, or, sql, count, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
   appointments,
@@ -36,9 +36,9 @@ const PAGE = 12;
 
 export async function staffRegistrations(user: User, f: RegFilters) {
   const conds: (SQL | undefined)[] = [eq(tripDestinations.missionId, user.missionId ?? "00000000-0000-0000-0000-000000000000")];
-  if (f.q) conds.push(or(ilike(citizenProfiles.fullName, `%${f.q}%`), ilike(trips.reference, `%${f.q}%`)));
+  if (f.q) conds.push(or(like(citizenProfiles.fullName, `%${f.q}%`), like(trips.reference, `%${f.q}%`)));
   if (f.country) conds.push(eq(tripDestinations.country, f.country));
-  if (f.region) conds.push(ilike(tripDestinations.region, `%${f.region}%`));
+  if (f.region) conds.push(like(tripDestinations.region, `%${f.region}%`));
   if (f.status && ["planned", "active", "closed", "cancelled"].includes(f.status)) conds.push(eq(trips.status, f.status as TripStatus));
   if (f.wellbeing === "none") conds.push(isNull(trips.wellbeingStatus));
   else if (f.wellbeing) conds.push(eq(trips.wellbeingStatus, f.wellbeing as "safe"));

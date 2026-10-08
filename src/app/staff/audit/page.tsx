@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, count, desc, eq, ilike, ne, or, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, like, ne, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { auditEvents, missions, users } from "@/db/schema";
 import { AccessDenied } from "@/components/staff-bits";
@@ -20,8 +20,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   const page = Math.max(1, Number(sp.page) || 1);
   const conds: (SQL | undefined)[] = [];
   if (user.role === "mission_admin") conds.push(eq(auditEvents.missionId, user.missionId!));
-  if (sp.q) conds.push(or(ilike(auditEvents.summary, `%${sp.q}%`), ilike(auditEvents.actorName, `%${sp.q}%`)));
-  if (sp.area) conds.push(ilike(auditEvents.action, `${sp.area}.%`));
+  if (sp.q) conds.push(or(like(auditEvents.summary, `%${sp.q}%`), like(auditEvents.actorName, `%${sp.q}%`)));
+  if (sp.area) conds.push(like(auditEvents.action, `${sp.area}.%`));
   const where = and(...conds);
   const [[{ c: total }], events, staff] = await Promise.all([
     db.select({ c: count() }).from(auditEvents).where(where),

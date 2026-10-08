@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { count, sql } from "drizzle-orm";
-import { db } from "@/db";
+import { db, withTransaction } from "@/db";
 import * as s from "@/db/schema";
 import { addDays, makeRef, zonedToUtc } from "./format";
 import { geocodePlace } from "./geo";
@@ -20,8 +20,7 @@ export async function ensureSeeded() {
   g.__ecSeed ??= (async () => {
     const [{ c }] = await db.select({ c: count() }).from(s.missions);
     if (c === 0) {
-      await db.transaction(async (tx) => {
-        await tx.execute(sql`select pg_advisory_xact_lock(7311)`);
+      await withTransaction(async (tx) => {
         const [{ c: c2 }] = await tx.select({ c: count() }).from(s.missions);
         if (c2 === 0) await seedAll(tx as unknown as typeof db);
       });
@@ -35,7 +34,39 @@ export async function ensureSeeded() {
 
 export async function resetDemoData() {
   g.__ecSeeded = false;
-  await db.execute(sql`truncate table users, missions, audit_events, feedback restart identity cascade`);
+  await db.run(sql`pragma foreign_keys = off`);
+  try {
+    for (const table of [
+      s.feedback,
+      s.auditEvents,
+      s.crisisResponses,
+      s.crisisEvents,
+      s.appointments,
+      s.caseEvents,
+      s.caseNotes,
+      s.caseMessages,
+      s.caseAttachments,
+      s.assistanceCases,
+      s.notifications,
+      s.alertReads,
+      s.alerts,
+      s.wellbeingUpdates,
+      s.dependants,
+      s.tripEvents,
+      s.tripDestinations,
+      s.trips,
+      s.notificationPreferences,
+      s.emergencyContacts,
+      s.citizenProfiles,
+      s.users,
+      s.missionJurisdictions,
+      s.missions,
+    ]) {
+      await db.delete(table);
+    }
+  } finally {
+    await db.run(sql`pragma foreign_keys = on`);
+  }
   await ensureSeeded();
 }
 
