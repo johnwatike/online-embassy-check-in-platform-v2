@@ -50,6 +50,8 @@ export function sessionCookieDeletions(): string[] {
     ...legacyCookieDeletions(SESSION_COOKIE),
     `${SESSION_COOKIE_P}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None; Partitioned`,
     `${SESSION_COOKIE_P}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
+    `ec_cs=; Path=/; Max-Age=0; SameSite=Lax`,
+    `ec_cs=; Path=/; Max-Age=0; Secure; SameSite=None; Partitioned`,
   ];
 }
 
