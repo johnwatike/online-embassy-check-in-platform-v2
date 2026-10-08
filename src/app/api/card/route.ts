@@ -24,6 +24,7 @@ export async function GET(req: Request) {
 <dt>Embassy emergency line</dt><dd class="big">${esc(d.mission?.emergencyPhone ?? FALLBACK_CONTACT.phone)} <span class="demo">Placeholder – not a working line</span></dd>
 <dt>Embassy general contact</dt><dd>${esc(d.mission?.phone)} · ${esc(d.mission?.email)}</dd>
 <dt>Local emergency services${d.dest ? " (" + esc(d.dest.country) + ")" : ""}</dt><dd class="big">${esc(d.local ?? "Check official local sources")}</dd><dd><small>Public reference – confirm locally</small></dd>
+<dt>Where I'm staying</dt><dd>${trip ? esc([trip.lodgingName, trip.accommodation].filter(Boolean).join(" · ")) || "Not included" : "—"}${trip?.lodgingLat != null && trip?.lodgingLng != null ? ` · 📍 ${esc(trip.lodgingPlace)} (${trip.lodgingLat}, ${trip.lodgingLng})` : ""}</dd>
 <dt>My emergency contact</dt><dd>${d.contact ? esc(d.contact.name) + " (" + esc(d.contact.relationship) + ") – " + esc(d.contact.phone) : "Not included"}</dd>
 </dl>
 <p><small>Last updated ${esc(fmtDateTime(d.updatedAt))}. Registration does not replace visas, immigration registration or local emergency services. Demo contact details are placeholders and not verified.</small></p>

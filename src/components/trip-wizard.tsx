@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { geocodeStay } from "@/app/actions/citizen";
 import { COUNTRIES, LOCAL_EMERGENCY, PURPOSES } from "@/lib/constants";
+import type { GeoPick } from "@/lib/geo";
 import { fmtDate } from "@/lib/format";
 import { resolveRouting } from "@/lib/routing";
 import type { ActionState, RoutingEntry } from "@/lib/types";
@@ -15,6 +17,10 @@ export type WizardInitial = {
   purpose: string;
   destinations: { country: string; region: string; arrivalDate: string; departureDate: string }[];
   accommodation: string;
+  lodgingName: string;
+  lodgingPlace: string | null;
+  lodgingLat: number | null;
+  lodgingLng: number | null;
   contactPhone: string;
   contactEmail: string;
   prefs: { email: boolean; sms: boolean; push: boolean; reminders: boolean };
@@ -38,6 +44,30 @@ function Inner({ mode, routing, initial, today, cancelHref }: { mode: "create" |
   const [purpose, setPurpose] = useState(initial.purpose);
   const [dests, setDests] = useState<Dest[]>(initial.destinations.length ? initial.destinations.map((d) => ({ ...d, unknown: !d.departureDate })) : [blankDest(today)]);
   const [accommodation, setAccommodation] = useState(initial.accommodation);
+  const [lodgingName, setLodgingName] = useState(initial.lodgingName);
+  const geoQuery = `${lodgingName} ${accommodation} ${dests[0]?.region ?? ""}`.replace(/\s+/g, " ").trim();
+  const geoCountry = dests[0]?.country ?? "";
+  const [geoResult, setGeoResult] = useState<{ q: string; pick: GeoPick | null }>({
+    q: geoQuery,
+    pick: initial.lodgingPlace && initial.lodgingLat != null && initial.lodgingLng != null ? { place: initial.lodgingPlace, lat: initial.lodgingLat, lng: initial.lodgingLng, kind: "match" } : null,
+  });
+
+  // Automatically pick coordinates for the entered stay address (debounced, offline dataset).
+  // State is only updated inside async callbacks (lint: no synchronous setState in effects).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!geoQuery) {
+        setGeoResult({ q: geoQuery, pick: null });
+        return;
+      }
+      geocodeStay(geoQuery, geoCountry)
+        .then((pick) => setGeoResult({ q: geoQuery, pick }))
+        .catch(() => setGeoResult({ q: geoQuery, pick: null }));
+    }, 350);
+    return () => clearTimeout(t);
+  }, [geoQuery, geoCountry]);
+  const geo = geoResult.q === geoQuery ? geoResult.pick : null;
+  const geoPending = geoResult.q !== geoQuery && geoQuery !== "";
   const [contactPhone, setContactPhone] = useState(initial.contactPhone);
   const [contactEmail, setContactEmail] = useState(initial.contactEmail);
   const [deps, setDeps] = useState<Dep[]>([]);
@@ -102,6 +132,7 @@ function Inner({ mode, routing, initial, today, cancelHref }: { mode: "create" |
     purpose,
     destinations: dests.map((d) => ({ country: d.country, region: d.region, arrivalDate: d.arrivalDate, departureDate: d.unknown ? "" : d.departureDate })),
     accommodation,
+    lodgingName,
     contactPhone,
     contactEmail,
     dependants: deps.filter((d) => d.fullName.trim()).map((d) => ({ fullName: d.fullName, relationship: d.relationship, birthYear: d.birthYear ? Number(d.birthYear) : null, consent: d.consent })),
@@ -196,7 +227,26 @@ function Inner({ mode, routing, initial, today, cancelHref }: { mode: "create" |
         <div className="space-y-5">
           <h2 ref={headingRef} tabIndex={-1} className="font-serif text-2xl font-semibold text-navy-950 outline-none">How can we reach you while you&apos;re there?</h2>
           <p className="text-navy-700">Everything on this page is optional. Share only what you&apos;re comfortable with.</p>
-          <TextField label="Accommodation address or area" name="accommodation" optional maxLength={300} value={accommodation} onChange={(e) => setAccommodation(e.target.value)} hint="Why we ask: only so the embassy can find you in an emergency. It is not shared with anyone else. A neighbourhood is enough." />
+          <div className="space-y-4 rounded-2xl border border-navy-200 bg-white p-4 sm:p-5">
+            <p className="text-base font-semibold text-navy-950">Where you will be staying</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label="Hotel or place of stay" name="lodgingName" optional maxLength={200} value={lodgingName} onChange={(e) => setLodgingName(e.target.value)} hint="e.g. Rove Downtown, a friend's home, staff housing." />
+              <TextField label="Hotel address & location" name="accommodation" optional maxLength={300} value={accommodation} onChange={(e) => setAccommodation(e.target.value)} hint="Street, area and city. A neighbourhood is enough." />
+            </div>
+            <div aria-live="polite" className="text-sm">
+              {geoPending ? (
+                <p className="text-navy-600">Picking coordinates…</p>
+              ) : geo ? (
+                <p className="rounded-xl border border-teal-200 bg-teal-50 px-3 py-2 font-medium text-teal-900">
+                  📍 Coordinates picked automatically: <strong>{geo.place}</strong> · {geo.lat}, {geo.lng}
+                  {geo.kind === "capital" && <span className="font-normal"> (approximate – nearest recognised place is the capital)</span>}
+                </p>
+              ) : (
+                <p className="text-navy-600">Coordinates are picked automatically once the hotel address or location is recognised.</p>
+              )}
+            </div>
+            <p className="text-xs text-navy-600">Why we ask: only so the embassy can find you in an emergency. It is not shared with anyone else.</p>
+          </div>
           <TextField label="Phone number while abroad" name="contactPhone" type="tel" optional value={contactPhone} error={errors.contactPhone} onChange={(e) => setContactPhone(e.target.value)} hint="Include the dialling code if it's different from your profile phone." />
           <TextField label="Email while abroad" name="contactEmail" type="email" optional value={contactEmail} error={errors.contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
         </div>
@@ -260,7 +310,7 @@ function Inner({ mode, routing, initial, today, cancelHref }: { mode: "create" |
             })}
             <Row label="Status" value={mode === "create" ? (stage === "arrived" ? "Registered as arrived (active)" : "Registered as upcoming") : "Changes to your existing registration"} />
             <Row label="Purpose" value={PURPOSES[purpose] ?? "—"} />
-            <Row label="Accommodation" value={accommodation || "Not provided"} />
+            <Row label="Where you're staying" value={[lodgingName, accommodation].filter(Boolean).join(" · ") + (geo ? ` · 📍 ${geo.place} (${geo.lat}, ${geo.lng})` : "") || "Not provided"} />
             <Row label="Contact abroad" value={[contactPhone, contactEmail].filter(Boolean).join(" · ") || "Not provided"} />
             <Row label="Dependants" value={deps.filter((d) => d.fullName).map((d) => d.fullName).join(", ") || (initial.existingDependants.length ? "No new dependants" : "None")} />
             <Row label="Notifications" value={[prefs.email && "Email", prefs.sms && "SMS", prefs.push && "Push"].filter(Boolean).join(", ") || "None selected"} />

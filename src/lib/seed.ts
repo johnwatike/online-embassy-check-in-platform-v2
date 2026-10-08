@@ -3,6 +3,7 @@ import { count, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as s from "@/db/schema";
 import { addDays, makeRef, zonedToUtc } from "./format";
+import { geocodePlace } from "./geo";
 import { resolveRouting } from "./routing";
 import { findRecipients } from "./services";
 import type { RoutingEntry } from "./types";
@@ -320,6 +321,7 @@ export async function seedAll(x: typeof db) {
     wellbeingAgoH?: number;
     createdAgoH: number;
     accommodation?: string;
+    lodgingName?: string;
     arrivalConfirmed?: boolean;
   };
   const tripSeeds: TripSeed[] = [];
@@ -329,7 +331,7 @@ export async function seedAll(x: typeof db) {
     return seed;
   };
 
-  const wanjikuTrip = addTrip({ userId: named.wanjiku.id, status: "active", purpose: "tourism", dests: [{ country: "United Arab Emirates", region: "Dubai, Al Barsha", arr: addDays(-4), dep: addDays(9) }], wellbeing: "safe", wellbeingAgoH: 46, createdAgoH: 24 * 12, accommodation: "Hotel apartment, Al Barsha (sample address)", arrivalConfirmed: true });
+  const wanjikuTrip = addTrip({ userId: named.wanjiku.id, status: "active", purpose: "tourism", dests: [{ country: "United Arab Emirates", region: "Dubai, Al Barsha", arr: addDays(-4), dep: addDays(9) }], wellbeing: "safe", wellbeingAgoH: 46, createdAgoH: 24 * 12, lodgingName: "Sunrise Hotel Apartments", accommodation: "Al Barsha 1, near Mall of the Emirates, Dubai (sample address)", arrivalConfirmed: true });
   addTrip({ userId: named.wanjiku.id, status: "planned", purpose: "tourism", dests: [{ country: "Norway", region: "Oslo", arr: addDays(40), dep: addDays(47) }], createdAgoH: 24 * 3 });
   addTrip({ userId: named.wanjiku.id, status: "closed", purpose: "tourism", dests: [{ country: "Uganda", region: "Kampala", arr: addDays(-200), dep: addDays(-190) }], wellbeing: "left_country", wellbeingAgoH: 24 * 190, createdAgoH: 24 * 230, arrivalConfirmed: true });
   const brianTrip = addTrip({ userId: named.brian.id, status: "active", purpose: "tourism", dests: [{ country: "United Arab Emirates", region: "Dubai, Deira", arr: addDays(-6), dep: addDays(4) }], wellbeing: "need_assistance", wellbeingAgoH: 2, createdAgoH: 24 * 20, arrivalConfirmed: true });
@@ -386,7 +388,9 @@ export async function seedAll(x: typeof db) {
   }
 
   await x.insert(s.trips).values(
-    tripSeeds.map((t) => ({
+    tripSeeds.map((t) => {
+      const geo = t.accommodation || t.lodgingName ? geocodePlace(`${t.lodgingName ?? ""} ${t.accommodation ?? ""} ${t.dests[0].region}`, t.dests[0].country) : null;
+      return {
       id: t.id,
       reference: t.ref,
       userId: t.userId,
@@ -395,6 +399,10 @@ export async function seedAll(x: typeof db) {
       startsOn: t.dests[0].arr,
       endsOn: t.dests[t.dests.length - 1].dep,
       accommodation: t.accommodation ?? null,
+      lodgingName: t.lodgingName ?? null,
+      lodgingPlace: geo?.place ?? null,
+      lodgingLat: geo?.lat ?? null,
+      lodgingLng: geo?.lng ?? null,
       contactEmail: null,
       contactPhone: null,
       arrivalConfirmedAt: t.arrivalConfirmed ? ago(Math.max(1, t.createdAgoH - 6)) : null,
@@ -402,7 +410,8 @@ export async function seedAll(x: typeof db) {
       wellbeingStatus: t.wellbeing ?? null,
       wellbeingUpdatedAt: t.wellbeing ? ago(t.wellbeingAgoH ?? 24) : null,
       createdAt: ago(t.createdAgoH),
-    })),
+    };
+    }),
   );
   await x.insert(s.tripDestinations).values(
     tripSeeds.flatMap((t) =>

@@ -62,7 +62,13 @@ export default async function RegistrationDetail({ params }: { params: Promise<{
               { label: "Registered", value: fmtDateTime(trip.createdAt) },
               { label: "Arrival confirmed", value: trip.arrivalConfirmedAt ? fmtDateTime(trip.arrivalConfirmedAt) : "Not confirmed" },
               { label: "Closed", value: trip.closedAt ? fmtDateTime(trip.closedAt) : "—" },
-              { label: "Accommodation (given for emergency use)", value: trip.accommodation || "Not provided" },
+              {
+                label: "Stay & location (given for emergency use)",
+                value:
+                  trip.lodgingName || trip.accommodation
+                    ? `${[trip.lodgingName, trip.accommodation].filter(Boolean).join(" · ")}${trip.lodgingLat != null && trip.lodgingLng != null ? ` · 📍 ${trip.lodgingPlace} (${trip.lodgingLat}, ${trip.lodgingLng})` : ""}`
+                    : "Not provided",
+              },
               { label: "Contact while abroad", value: [trip.contactPhone, trip.contactEmail].filter(Boolean).join(" · ") || "Not provided" },
               { label: "Dependants (with consent)", value: deps.length ? deps.map((d) => `${d.fullName} (${d.relationship})`).join(", ") : "None" },
             ]} />

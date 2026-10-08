@@ -54,8 +54,10 @@ Scripts: `npm run dev | build | start | lint | typecheck`, `npm run db` (dev Pos
 ## Portals & routes
 
 - **Public** — `/` home, `/embassies` mission directory, `/guidance`, `/privacy`
-- **Citizen** — `/app` dashboard, trips wizard, status check‑in, alerts, help/cases with
-  messaging and attachments, appointments, printable emergency contact card (`/api/card`), profile
+- **Citizen** — `/app` dashboard, trips wizard (hotel name + address with automatically picked
+  coordinates from the bundled offline `all-the-cities` dataset), status check‑in, alerts,
+  help/cases with messaging and attachments, appointments, printable emergency contact card
+  (`/api/card`), profile
 - **Staff** — `/staff` dashboard, registrations, cases, alerts (draft/publish), crisis wellbeing
   checks, appointments, mission settings, roles & audit (permission‑gated)
 - **i18n** — English / Kiswahili switch (EN | SW) on the main screens

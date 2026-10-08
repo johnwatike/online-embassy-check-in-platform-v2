@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   // The live preview is served from *.e2b.app hosts; allow their dev resources (HMR, refresh)
   // so client components hydrate correctly in the hosted preview.
   allowedDevOrigins: ["*.e2b.app", "*.e2b.dev"],
+  // `all-the-cities` reads its dataset from disk at require-time – keep it out of the bundle.
+  serverExternalPackages: ["all-the-cities"],
   experimental: {
     serverActions: {
       // Optional case attachments are limited to 2 MB each (validated again on the server).

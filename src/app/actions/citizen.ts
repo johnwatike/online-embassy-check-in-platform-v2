@@ -32,6 +32,7 @@ import { requireCitizen } from "@/lib/auth";
 import { CASE_CATEGORIES, DIAL_CODES, LANGUAGES, PURPOSES, WELLBEING } from "@/lib/constants";
 import { currentDestination, getUserTrip, loadTrips, relevantAlerts } from "@/lib/data";
 import { addDays, fmtDate, fmtDateTime, makeRef, todayStr } from "@/lib/format";
+import { geocodePlace } from "@/lib/geo";
 import { resolveRouting } from "@/lib/routing";
 import { audit, loadRouting, notify } from "@/lib/services";
 import type { ActionState, User } from "@/lib/types";
@@ -57,6 +58,7 @@ const tripSchema = z.object({
     .min(1, "Add at least one destination")
     .max(8),
   accommodation: shortText(300).optional().default(""),
+  lodgingName: shortText(200).optional().default(""),
   contactPhone: phoneText,
   contactEmail: optionalEmail,
   dependants: z
@@ -84,6 +86,17 @@ function parseTrip(fd: FormData): { data: TripInput } | { state: ActionState } {
   const parsed = tripSchema.safeParse(raw);
   if (!parsed.success) return { state: fail(parsed.error) };
   return { data: parsed.data };
+}
+
+/** Coordinates are always (re)computed server-side from the stay details – never trusted from the client. */
+function lodgingFields(d: TripInput) {
+  const geo = geocodePlace(`${d.lodgingName} ${d.accommodation} ${d.destinations[0].region}`, d.destinations[0].country);
+  return { lodgingName: d.lodgingName || null, lodgingPlace: geo?.place ?? null, lodgingLat: geo?.lat ?? null, lodgingLng: geo?.lng ?? null };
+}
+
+/** Live preview for the check-in wizard: auto-pick coordinates for the entered stay address. */
+export async function geocodeStay(query: string, country: string) {
+  return geocodePlace(query, country);
 }
 
 function checkDates(d: TripInput, mode: "create" | "edit"): string | null {
@@ -133,6 +146,7 @@ export async function createTrip(_prev: ActionState, fd: FormData): Promise<Acti
       startsOn: d.destinations[0].arrivalDate,
       endsOn: last.departureDate || null,
       accommodation: d.accommodation || null,
+      ...lodgingFields(d),
       contactPhone: d.contactPhone || null,
       contactEmail: d.contactEmail || null,
       arrivalConfirmedAt: arrived ? new Date() : null,
@@ -180,7 +194,7 @@ export async function updateTrip(tripId: string, _prev: ActionState, fd: FormDat
   const oldFirst = existing.destinations[0];
   await db
     .update(trips)
-    .set({ purpose: d.purpose, startsOn: d.destinations[0].arrivalDate, endsOn: last.departureDate || null, accommodation: d.accommodation || null, contactPhone: d.contactPhone || null, contactEmail: d.contactEmail || null })
+    .set({ purpose: d.purpose, startsOn: d.destinations[0].arrivalDate, endsOn: last.departureDate || null, accommodation: d.accommodation || null, ...lodgingFields(d), contactPhone: d.contactPhone || null, contactEmail: d.contactEmail || null })
     .where(and(eq(trips.id, tripId), eq(trips.userId, user.id)));
   await db.delete(tripDestinations).where(eq(tripDestinations.tripId, tripId));
   await db.insert(tripDestinations).values(
