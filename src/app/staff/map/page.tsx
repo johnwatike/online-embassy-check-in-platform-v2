@@ -32,7 +32,7 @@ export default async function StaffMapPage() {
         <Badge tone="navy">● No update / upcoming · {points.length - count("safe") - count("need_assistance") - count("plans_changed")}</Badge>
       </div>
       <CheckinMap points={points} />
-      <p className="mt-2 text-xs text-navy-600">Map data © OpenStreetMap contributors. Hollow rings are approximate (destination city or capital). Citizens choose what to share; no continuous tracking.</p>
+      <p className="mt-2 text-xs text-navy-600">Free map tiles by OpenStreetMap contributors, CARTO and Esri. Approximate dots use the destination city or capital. Citizens choose what to share; no continuous tracking.</p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card>
