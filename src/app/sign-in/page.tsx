@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { missions, users } from "@/db/schema";
@@ -41,7 +42,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
     <>
       <PublicHeader />
       <main id="main" className="mx-auto max-w-6xl px-4 py-10">
-        <h1 className="font-serif text-4xl font-semibold text-navy-950">Demo access</h1>
+        <div className="flex items-center gap-4">
+          <Image src="/mfa-logo.png" alt="Seal of the Ministry of Foreign Affairs, Republic of Kenya" width={1408} height={768} sizes="96px" className="h-14 w-auto" />
+          <h1 className="font-serif text-4xl font-semibold text-navy-950">Demo access</h1>
+        </div>
         <p className="mt-2 max-w-3xl text-lg text-navy-700">Choose a sample persona or create a demo citizen account. No password is asked for or stored, and sessions are demo-only.</p>
         {sp.reset && <div role="status" className="mt-4"><Notice tone="success">Demo data has been reset to its original sample state.</Notice></div>}
         {sp.error && <div role="alert" className="mt-4"><Notice tone="warning" title="That demo user is no longer available">The demo data was probably reset while this page was open. Please choose a persona from the list below.</Notice></div>}

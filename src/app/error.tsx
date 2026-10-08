@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { unstable_isUnrecognizedActionError as isUnrecognizedActionError } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const RELOAD_KEY = "ec_stale_reload_at";
 
@@ -14,7 +14,6 @@ function looksStale(error: Error) {
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const stale = looksStale(error);
-  const [reloading, setReloading] = useState(false);
 
   useEffect(() => {
     // Only the digest is logged – never page content or personal data.
@@ -26,7 +25,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0);
       if (Date.now() - last > 15000) {
         sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-        setReloading(true);
         window.location.reload();
       }
     } catch {
@@ -39,9 +37,9 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
       <p className="text-sm font-semibold uppercase tracking-wide text-teal-700">Embassy Connect</p>
       {stale ? (
         <>
-          <h1 className="mt-1 font-serif text-3xl font-semibold text-navy-950">{reloading ? "Updating…" : "This page is out of date"}</h1>
+          <h1 className="mt-1 font-serif text-3xl font-semibold text-navy-950">This page is out of date</h1>
           <p className="mt-3 text-navy-800">
-            Embassy Connect was updated while this page was open, so this button no longer matches the service. {reloading ? "Reloading the latest version now." : "Reload the page to get the latest version, then try again."}
+            Embassy Connect was updated while this page was open, so this button no longer matches the service. We&apos;re trying to reload the latest version automatically — if nothing happens, reload the page, then try again.
           </p>
         </>
       ) : (

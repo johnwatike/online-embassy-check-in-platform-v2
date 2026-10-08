@@ -8,7 +8,7 @@ import { ActionForm, SubmitButton } from "@/components/form";
 import { Card, EmptyState, Notice, PageHeader } from "@/components/ui";
 import { requireCitizen } from "@/lib/auth";
 import { currentDestination, getUserTrips, listMissionsWithJurisdictions, pickCurrentTrip } from "@/lib/data";
-import { dayKey, fmtDayLong, fmtTime } from "@/lib/format";
+import { addHours, dayKey, fmtDayLong, fmtTime } from "@/lib/format";
 import { UUID } from "@/lib/validation";
 
 export const metadata: Metadata = { title: "Book an appointment" };
@@ -25,7 +25,7 @@ export default async function BookPage({ searchParams }: { searchParams: Promise
   const reschedule = sp.reschedule && UUID.test(sp.reschedule) ? sp.reschedule : "";
 
   const slots = service
-    ? await db.select().from(appointments).where(and(eq(appointments.missionId, mission.id), eq(appointments.serviceId, service.id), eq(appointments.status, "available"), gt(appointments.startsAt, new Date(Date.now() + 3600e3)))).orderBy(asc(appointments.startsAt)).limit(60)
+    ? await db.select().from(appointments).where(and(eq(appointments.missionId, mission.id), eq(appointments.serviceId, service.id), eq(appointments.status, "available"), gt(appointments.startsAt, addHours(1)))).orderBy(asc(appointments.startsAt)).limit(60)
     : [];
   const byDay = new Map<string, typeof slots>();
   for (const s of slots) {

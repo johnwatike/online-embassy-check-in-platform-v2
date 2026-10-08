@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { DEMO_NOTICE, NOTICES, type Tone } from "@/lib/constants";
@@ -5,7 +6,7 @@ import { DEMO_NOTICE, NOTICES, type Tone } from "@/lib/constants";
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
 const BTN_VARIANT = {
-  primary: "bg-navy-900 text-white hover:bg-navy-800 border border-navy-900",
+  primary: "bg-ke-green text-white hover:bg-teal-800 border border-ke-green",
   teal: "bg-teal-700 text-white hover:bg-teal-800 border border-teal-700",
   danger: "bg-red-700 text-white hover:bg-red-800 border border-red-700",
   outline: "bg-white text-navy-900 hover:bg-navy-50 border border-navy-300",
@@ -237,18 +238,29 @@ export function DemoNotice({ className }: { className?: string }) {
   );
 }
 
-export function BrandMark({ light = false, className }: { light?: boolean; className?: string }) {
+export function BrandMark({ light = false, className, emblemSize = "h-10" }: { light?: boolean; className?: string; emblemSize?: string }) {
   return (
-    <span className={cx("inline-flex items-baseline gap-1.5 font-serif text-xl font-semibold tracking-tight", light ? "text-white" : "text-navy-950", className)}>
-      <span aria-hidden className="inline-block size-2 translate-y-[-2px] rounded-full bg-gold-400" />
-      Embassy<span className={light ? "text-teal-300" : "text-teal-700"}>Connect</span>
+    <span className={cx("inline-flex items-center gap-3 text-left", className)}>
+      <Image src="/kenya-coat-of-arms.png" alt="Coat of arms of the Republic of Kenya" width={1408} height={768} sizes="96px" className={cx("w-auto shrink-0", emblemSize)} />
+      <span className="flex flex-col leading-tight">
+        <span className={cx("font-serif text-lg font-semibold tracking-tight", light ? "text-white" : "text-navy-950")}>
+          Embassy <span className={light ? "text-gold-300" : "text-ke-green"}>Connect</span>
+        </span>
+        <span className={cx("text-[11px] font-medium", light ? "text-navy-100" : "text-navy-700")}>Republic of Kenya · Ministry of Foreign Affairs</span>
+      </span>
     </span>
   );
 }
 
-/** Thin black/red/green accent line. A design nod to Kenya – not a flag, seal or official mark. */
+/** The black–white–red–white–green of the Kenyan flag. A design nod to Kenya – rendered for the pilot, not an official flag artwork. */
 export function KenyaStripe() {
-  return <div aria-hidden className="h-1 w-full" style={{ background: "linear-gradient(90deg,#141414 0 33.3%,#b3131b 33.3% 66.6%,#0b6b2f 66.6% 100%)" }} />;
+  return (
+    <div
+      aria-hidden
+      className="h-1.5 w-full"
+      style={{ background: "linear-gradient(90deg,#000000 0 31%,#ffffff 31% 34.5%,#bb0000 34.5% 65.5%,#ffffff 65.5% 69%,#006600 69% 100%)" }}
+    />
+  );
 }
 
 export const tableCls = {

@@ -18,6 +18,9 @@
 .DS_Store
 *.pem
 
+# local dev database (scripts/db-server.mjs)
+/.pgdata/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

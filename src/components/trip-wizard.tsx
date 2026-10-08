@@ -241,7 +241,7 @@ function Inner({ mode, routing, initial, today, cancelHref }: { mode: "create" |
             <CheckField name="pp" label="Push notifications" checked={prefs.push} onChange={(e) => setPrefs({ ...prefs, push: e.target.checked })} />
           </fieldset>
           <CheckField name="pr" label="Send me occasional reminders to confirm my details or wellbeing" hint="Optional. Missing a reminder never marks you as missing or in danger." checked={prefs.reminders} onChange={(e) => setPrefs({ ...prefs, reminders: e.target.checked })} />
-          <Notice tone="info" title="Urgent alerts">You can choose in your profile whether urgent safety alerts may use every channel you've given us, even ones you've switched off. This saves your choices for future trips too.</Notice>
+          <Notice tone="info" title="Urgent alerts">You can choose in your profile whether urgent safety alerts may use every channel you&apos;ve given us, even ones you&apos;ve switched off. This saves your choices for future trips too.</Notice>
         </div>
       )}
 

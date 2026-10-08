@@ -14,7 +14,8 @@ export default async function TripsPage({ searchParams }: { searchParams: Promis
   const trips = await getUserTrips(user.id);
   const current = trips.filter((t) => t.status === "active" || t.status === "planned");
   const past = trips.filter((t) => t.status === "closed" || t.status === "cancelled");
-  const List = ({ list }: { list: typeof trips }) => (
+  function tripList(list: typeof trips) {
+    return (
     <ul className="grid gap-4 md:grid-cols-2">
       {list.map((t) => (
         <li key={t.id}>
@@ -28,14 +29,15 @@ export default async function TripsPage({ searchParams }: { searchParams: Promis
         </li>
       ))}
     </ul>
-  );
+    );
+  }
   return (
     <div className="mx-auto max-w-5xl">
       <Flash notice={notice} />
       <PageHeader title="My trips" description="Current, upcoming and past registrations. Closing a trip never deletes its history." actions={<ButtonLink href="/app/trips/new" variant="teal">Check in for a trip</ButtonLink>} />
       <h2 className="mb-3 text-lg font-semibold text-navy-950">Current and upcoming</h2>
-      {current.length ? <List list={current} /> : <EmptyState title="No current trips" icon="🧳" action={<ButtonLink href="/app/trips/new" variant="teal">Check in</ButtonLink>}>Register a trip so the embassy can reach you with relevant alerts.</EmptyState>}
-      {past.length > 0 && (<><h2 className="mb-3 mt-8 text-lg font-semibold text-navy-950">Past trips</h2><List list={past} /></>)}
+      {current.length ? tripList(current) : <EmptyState title="No current trips" icon="🧳" action={<ButtonLink href="/app/trips/new" variant="teal">Check in</ButtonLink>}>Register a trip so the embassy can reach you with relevant alerts.</EmptyState>}
+      {past.length > 0 && (<><h2 className="mb-3 mt-8 text-lg font-semibold text-navy-950">Past trips</h2>{tripList(past)}</>)}
     </div>
   );
 }

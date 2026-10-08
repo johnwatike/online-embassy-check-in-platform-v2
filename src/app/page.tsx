@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { PublicFooter, PublicHeader } from "@/components/public";
 import { ButtonLink, Card, DemoNotice, Notice } from "@/components/ui";
 import { getLang, tr, type Key } from "@/lib/i18n";
@@ -23,8 +24,12 @@ export default async function Home() {
     <>
       <PublicHeader />
       <main id="main">
-        <section className="on-dark bg-gradient-to-b from-navy-950 to-navy-800 text-white">
+        <section className="on-dark bg-gradient-to-b from-ke-black via-mfa-navy to-navy-800 text-white">
           <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
+            <div className="mb-6 flex items-center gap-5">
+              <Image src="/mfa-logo.png" alt="Seal of the Ministry of Foreign Affairs, Republic of Kenya" width={1408} height={768} sizes="96px" className="h-16 w-auto sm:h-20" />
+              <Image src="/kenya-coat-of-arms.png" alt="Coat of arms of the Republic of Kenya" width={1408} height={768} sizes="96px" className="h-16 w-auto sm:h-20" />
+            </div>
             <p className="mb-3 inline-block rounded-full border border-gold-400/60 px-3 py-1 text-sm font-semibold text-gold-300">{t("home.eyebrow")}</p>
             <h1 className="max-w-3xl font-serif text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">{t("home.h1")}</h1>
             <p className="mt-5 max-w-2xl text-lg text-navy-100">{t("home.lead")}</p>
